@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+bail() {
+  printf "%s\n" "$@" >&2
+  exit 1
+}
+
+fetch() {
+  mkdir -p "$PWD/sysroot/${1%/*}" || bail "could not create dir for $1"
+  cp --recursive --update "$1" "$PWD/sysroot/$1" || bail "copying $1 failed"
+}
+
+kernel_version() {
+  awk '
+    $1 == "VERSION"                        { version = $NF }
+    $1 == "PATCHLEVEL" || $1 == "SUBLEVEL" { version = version "." $NF }
+    $1 == "EXTRAVERSION"                   { version = version $NF; exit }
+    END                                    { print version }
+  ' "${1:-/usr/src/linux/Makefile}"
+}
+
+cd $(dirname $(realpath $0))
+
+config="/usr/src/linux/.config"
+[[ -s "$config" ]] || bail "No .config in /usr/src/linux"
+
+cp --update "$config" kernel/config-$(kernel_version)
+
+while read line; do
+  [[ "$line" =~ ^\`/ ]] || continue
+  fetch "${line//\`/}"
+done < README.md
+
+git add .
+
+if [[ -z "$1" ]]; then
+  echo "No commit message provided, commit and push manually"
+  exit
+fi
+
+git commit -m "$@" && git push

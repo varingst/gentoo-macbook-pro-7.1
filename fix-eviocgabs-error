@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+bail() {
+  printf "%s\n" "$@" >&2
+  exit 1
+}
+
+hwdb="/lib/udev/hwdb.d/60-evdev.hwdb"
+
+(( EUID == 0 )) || bail "must be root"
+[[ -s "$hwdb" ]] || bail "could not find $hwdb"
+
+sed -i 's/^\(evdev:input:b0003v05ACp0237\)\*$/\1e0001*/' "$hwdb"
+udevadm hwdb --update
+udevadm trigger /dev/input/event{9,10}

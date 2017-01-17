@@ -1,0 +1,16 @@
+evdev:input:b0003v05ACp0237e0111*
+# esc
+# KEYBOARD_KEY_01=capslock
+# KEYBOARD_KEY_70029=capslock
+# grave
+# KEYBOARD_KEY_29=esc
+  KEYBOARD_KEY_70064=esc
+# 102nd / <>
+# KEYBOARD_KEY_56=grave
+  KEYBOARD_KEY_70035=grave
+# capslock
+# KEYBOARD_KEY_3a=leftctrl
+  KEYBOARD_KEY_70039=leftctrl
+# eject
+# KEYBOARD_KEY_6c=insert
+  KEYBOARD_KEY_c00b8=insert

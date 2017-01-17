@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+bail() {
+  echo "$0, bailing .." >&2
+  exit 1
+}
+
+print_help() {
+  [[ -n "$1" ]] && echo "$@"
+  cat <<EOS
+Usage: ${0##*/}                   toggle whether fn key is down or up by default
+       ${0##*/} set VALUE         set a specific state
+       ${0##*/} disable           disable fn key
+       ${0##*/} init [VALUE]      grant wheel group access, requires root
+                                  optionally pass a default value to set
+                                  (kernel default is 'fn key pressed')
+
+VALUE is one of:
+  0                         disable fn key
+  1, on, down, pressed      fn key is pressed by default
+  2, off, up, released      fn key is released by default
+EOS
+}
+
+fnctl=/sys/module/hid_apple/parameters/fnmode
+
+if [[ -z $1 ]]; then
+  read current < "$fnctl"
+  case "$current" in
+    0) echo "The fn key is disabled. Enable with ${0##*/} set";;
+    1) exec $0 set 2;;
+    2) exec $0 set 1;;
+  esac
+  exit
+fi
+
+case "$1" in
+  init)
+    if (( EUID != 0 )); then
+      echo "not root" >&2
+      exit 1
+    fi
+    chown root:wheel "$fnctl"
+    chmod g+w "$fnctl"
+    [[ -n "$2" ]] && exec $0 set "$2"
+    exit
+  ;;
+
+  set)
+    case "$2" in
+      0)
+        new=0
+        echo "fn key disabled"
+      ;;
+      1|on|down|pressed)
+        new=1
+        echo "fn key pressed by default"
+      ;;
+      2|off|up|released)
+        new=2
+        echo "fn key released by default"
+      ;;
+      *)
+        print_help "Unrecognized value '$1'" >&2
+        exit 1
+      ;;
+    esac
+    echo "$new" > "$fnctl"
+  ;;
+
+  disable)              exec $0 set 0;;
+  help|--help|--usage)  print_help;;
+
+  *)
+    print_help "Unrecognized command: '$@'" >&2
+    exit 1
+  ;;
+esac

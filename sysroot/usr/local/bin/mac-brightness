@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+
+print_help() { cat <<EOS
+Usage: ${0##*/} DEV [up|down] [STEP]     adjust brightness up or down, up is default
+       ${0##*/} DEV set VALUE            set brightness
+       ${0##*/} DEV show                 current and max brightness
+       ${0##*/} init                     grant wheel group access, requires root
+       ${0##*/} keys                     print keys for .xbindkeysrc
+
+DEV is one of kb, keyboard, dp, display
+STEP is optional and defaults to 1/10th of max brightness
+EOS
+}
+
+print_keys() { cat <<EOS
+# display backlight brightness
+"$0 dp down"
+  XF86MonBrightnessDown
+  # m:0x0 + c:232
+"$0 dp up"
+  XF86MonBrightnessUp
+  # m:0x0 + c:233
+
+# keyboard backlight brightness
+"$0 kb down"
+  XF86KbdBrightnessDown
+  # m:0x0 + c:237
+"$0 kb up"
+  XF86KbdBrightnessUp
+  # m:0x0 + c:238
+EOS
+}
+
+bail() {
+  echo "$@, bailing .." >&2
+  exit 1
+}
+
+kbctl="/sys/devices/platform/applesmc.768/leds/smc::kbd_backlight/brightness"
+dpctl="/sys/class/backlight/nv_backlight/brightness"
+change="${2:-up}"
+
+case "$1" in
+  init)
+    (( EUID == 0 )) || bail "not root"
+    chown root:wheel "$kbctl" "$dpctl"
+    chmod g+w "$kbctl" "$dpctl"
+    exit
+  ;;
+  keys)
+    print_keys
+    exit
+  ;;
+  kb|keyboard)
+    device="$kbctl"
+  ;;
+  dp|display)
+    device="$dpctl"
+  ;;
+  -h|--help|--usage) print_help;;
+  *)
+    print_help
+    exit 1
+  ;;
+esac
+
+[[ -s "$device" ]] || bail "could not find $device"
+
+read current < "$device"
+read max < "${device%brightness}max_brightness"
+step=${3:-$(( max / 10 ))}
+
+case "${change,,}" in
+  up)     new=$(( current + step ));;
+  down)   new=$(( current - step ));;
+  set)
+    [[ -n "$3" ]] || bail "no value specified for $device"
+    new="$3"
+  ;;
+  show)
+    echo "$current / $max"
+    exit
+  ;;
+  *)
+    print_help
+    exit 1
+  ;;
+esac
+
+# force 1 as last step before 0
+if (( new <= 0 )); then
+  if (( current == 1 )); then
+    new=0
+  else
+    new=1
+  fi
+elif (( new > 0 && current == 0 )); then
+  new=1
+elif (( new > max )); then
+  new="$max"
+fi
+
+echo "$new" > "$device"
+

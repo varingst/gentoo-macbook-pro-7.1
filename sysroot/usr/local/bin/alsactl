@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+
+print_help() { cat <<EOS
+Usage: ${0##*/} up|down           adjust alsa master channel volume
+       ${0##*/} toggle            toggle alsa master channel mute
+       ${0##*/} keys              print keys for .xbindkeysrc
+EOS
+}
+
+print_keys() { cat <<EOS
+# sound volume keys
+"$0 up"
+  XF86AudioRaiseVolume
+  # m:0x0 + c:123
+"$0 down"
+  XF86AudioLowerVolume
+  # m:0x0 + c:122
+"$0 toggle"
+  XF86AudioMute
+  # m:0x0 + c:121
+EOS
+}
+
+is_muted() {
+  amixer get Master | awk '
+    { state = $NF }
+    END { if (match(state, /\[on\]/)) { exit 1 } }'
+}
+
+volume() {
+  awk '
+  { line = $(NF-2) $(NF-1) }
+  END {
+    gsub(/[\[\]]/, " ", line)
+    gsub(/ 0.00dB.*$/, "", line)
+    printf("Master: %s\n", line)
+  }'
+}
+
+amix() {
+  amixer set Master "$@" 2>/dev/null
+}
+qamix() {
+  amixer --quiet set Master "$@" 2>/dev/null
+}
+
+notify() {
+  echo "$@"
+  notify-send --expire-time=1500 "$@"
+}
+
+mute() {
+  qamix mute
+  notify "Master: Muted"
+}
+
+unmute() {
+  notify "$(amix unmute | volume)"
+}
+
+sound="/usr/share/sounds/alsactl/camera-shutter.wav"
+
+case "${1,,}" in
+  up)
+    is_muted && qamix unmute
+    notify "$(amix "${2:-2dB+}" | volume)"
+  ;;
+  down)
+    is_muted && qamix unmute
+    notify "$(amix "${2:-2dB-}" | volume)"
+  ;;
+  mute)
+    mute
+    exit
+  ;;
+  unmute)
+    unmute
+  ;;
+  toggle)
+    if is_muted; then
+      unmute
+    else
+      mute
+    fi
+  ;;
+  keys)
+    print_keys
+    exit
+  ;;
+  help)
+    print_help
+    exit
+  ;;
+  *)
+    print_help >&2
+    exit 1
+  ;;
+esac
+
+aplay --quiet "$sound" &

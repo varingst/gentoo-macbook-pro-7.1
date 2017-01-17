@@ -1,0 +1,8 @@
+# disable ISO layout
+echo 0 > /sys/module/hid_apple/parameters/iso_layout
+
+# let fkeys default to fkeys
+/usr/local/bin/mac-fn-toggle init 2
+
+# let wheel control keyboard and display backlight
+/usr/local/bin/mac-brightness init
