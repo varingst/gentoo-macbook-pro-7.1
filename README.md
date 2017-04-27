@@ -42,6 +42,8 @@ in order to remap those keys.
 
 `/usr/local/bin/alsactl`
 
+`/usr/local/bin/pulsectl`
+
 `/usr/share/sounds/alsactl/camera-shutter.wav`
 
 Modification of [Camera Shutter Click](soundbible.com/563-Camera-Shutter-Click.html) by Mike Koening under [Attribution 3.0](http://creativecommons.org/licenses/by/3.0)

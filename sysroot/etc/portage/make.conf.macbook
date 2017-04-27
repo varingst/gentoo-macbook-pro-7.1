@@ -17,4 +17,4 @@ CPU_FLAGS_X86="mmx mmxext sse sse2 sse3 sse4_1 ssse3"
 INPUT_DEVICES="evdev synaptics mtrack tslib"
 VIDEO_CARDS="nouveau"
 
-MACBOOK_USE="bluetooth"
+USE="bluetooth pulseaudio"

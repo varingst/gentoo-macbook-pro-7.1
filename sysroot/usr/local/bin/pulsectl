@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+print_help() { cat <<EOS
+Usage: ${0##*/} <sink> up|down           adjust pulseaudio sink volume
+       ${0##*/} <sink> toggle            toggle pulseaudio sink  mute
+       ${0##*/} <sink> keys              print sink control keys for .xbindkeysrc
+EOS
+}
+
+print_keys() { cat <<EOS
+# sound volume keys
+"$0 $1 up"
+  XF86AudioRaiseVolume
+  # m:0x0 + c:123
+"$0 $1 down"
+  XF86AudioLowerVolume
+  # m:0x0 + c:122
+"$0 $1 toggle"
+  XF86AudioMute
+  # m:0x0 + c:121
+EOS
+}
+
+sound="/usr/share/sounds/alsactl/camera-shutter.wav"
+sink=$1
+shift
+
+case "${1,,}" in
+  up)
+    pactl set-sink-mute $sink false
+    pactl set-sink-volume $sink ${2-"+5%"}
+  ;;
+  down)
+    pactl set-sink-mute $sink false
+    pactl set-sink-volume $sink ${2-"-5%"}
+  ;;
+  toggle)
+    pactl set-sink-mute $sink toggle
+  ;;
+  keys)
+    print_keys $sink
+    exit
+  ;;
+  help)
+    print_help
+    exit
+  ;;
+  *)
+    print_help >&2
+    exit 1
+  ;;
+esac
+
+paplay "$sound" &
