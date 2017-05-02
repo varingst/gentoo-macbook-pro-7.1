@@ -38,6 +38,9 @@ in order to remap those keys.
 ## Startup script
 `/etc/local.d/macbook.start`
 
+## Power management network control script
+`/etc/pm/sleep.d/00-network`
+
 ## Volume control
 
 `/usr/local/bin/alsactl`

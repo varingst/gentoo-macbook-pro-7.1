@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+# properly stop and start the network
+
+if [[ -r "${PM_FUNCTIONS}" ]]; then
+  . "${PM_FUNCTIONS}"
+elif [[ -r "${PM_FUNCTIONS}" ]]; then
+  . "${FUNCTIONS}"
+else
+# pm-utils version is too old, or something else is wrong
+  exit $NA
+fi
+
+case "$1" in
+  hibernate|suspend)    exec rc default;;
+  thaw|resume)          exec rc network;;
+  *)                    exit $NA;;
+esac
+
+
