@@ -1,0 +1,15 @@
+# Configuration file for /usr/local/bin/monitor-hotplug
+
+# Output to set as primary, in order of priority
+primary DP-1 LVDS-1
+
+# Uncomment to log the command and output from xrandr
+# logfile /tmp/monitor-hotplug
+
+# Options to xrandr --output, i.e.
+# <output> --mode 1920x1080 --left-of <output>
+DP-1 --mode 1920x1080 --right-of LVDS-1
+
+# Options to xrandr --output, i.e.
+# <output> --mode 1920x1080 --left-of <output>
+LVDS-1 --mode 1280x800

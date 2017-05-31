@@ -60,3 +60,12 @@ Some seconds of silence removed.
 
 `/usr/local/bin/mac-fn-toggle`
 
+## Monitor Hotplug
+
+`/usr/local/bin/monitor-hotplug`
+
+`/etc/monitor-hotplug`
+
+`/etc/udev/rules.d/99-monitor-hotplug.rules`
+
+For attaching/detaching monitors to the DisplayPort

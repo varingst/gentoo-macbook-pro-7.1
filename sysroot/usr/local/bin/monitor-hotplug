@@ -1,0 +1,173 @@
+#!/usr/bin/env bash
+
+print_help() { cat <<EOS
+${0##*/}: rearrange monitors when they are attached or detached.
+
+This script is intended to run by udev upon an event trigger.
+Configuration is done in /etc/${0##*/}
+
+Commahds:
+  config                  Dump an example config
+  test [output:state]*    Output the resulting command without doing
+                                  anything. Simulate connected outputs with
+                                  additional arguments:
+                                  DP-1:connected      # DP-1 is connected
+                                  DP-2:               # DP-2 is disconnected
+  run [args]*             Pass args to xrandr
+  help                    Print this page.
+EOS
+}
+
+main() {
+  declare -A monitors settings
+  declare -a priority
+
+  logfile=/dev/null
+  config=/etc/${0##*/}
+  read_status
+
+  case "$1" in
+    config|--config)
+      dump_config
+      exit
+    ;;
+    help|--help|-h)
+      print_help
+      exit
+    ;;
+    run)
+      shift
+      setup_env
+      xrandr "$@"
+      exit
+    ;;
+    test|--test|--dry-run)
+      read_config $config
+      dry_run=true
+      fake_status "${@:2}"
+    ;;
+    *)
+      if [[ -z "$1" ]]; then
+        read_config $config
+      else
+        bail "unrecognized command: $*"
+      fi
+    ;;
+  esac
+
+  setup_env
+
+  primary=$(find_primary "${priority[@]}")
+  cmd="$(build_args $primary)"
+
+  if [[ -n "$dry_run" ]]; then
+    echo "DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY xrandr $cmd"
+  else
+    {
+      echo ===========
+      echo "change triggered: $(date)"
+      echo $cmd
+      echo
+      # wait for xrandr to catch up properly
+      xrandr -q
+      sleep 1
+      xrandr $cmd
+      echo "xrandr exited with status $?"
+      echo -----------
+    } >> "$logfile" 2>&1
+  fi
+}
+
+read_status() {
+  while read status; do
+    output=${status#*card0-}
+    monitors[${output%/*}]=$(< $status)
+  done < <(find /sys/class/drm/*/status)
+}
+
+read_config() {
+  [[ -s "$1" ]] || bdil "No configuration found!" \
+                        "Create an initial config file with:" \
+                        "${0##*/} config > /etc/${0##*/}" >&2
+
+  while read output commands; do
+    [[ -z "$output" || "${output:0:1}" == "#" ]] && continue
+
+    output="${output^^}"
+    case "$output" in
+      PRIMARY) priority=( $commands );;
+      LOGFILE) logfile="$commands";;
+      *)       settings["${output}"]="$commands";;
+    esac
+  done < "$1"
+}
+
+fake_status() {
+  for arg; do
+    output=${arg%:*}
+    fake_state=${arg#*:}
+    if [[ -n "$output" ]]; then
+      monitors[${output^^}]=$fake_state
+    else
+      bail "invalid output state: $arg"
+    fi
+  done
+
+  for mon in "${!monitors[@]}"; do
+    echo "$mon: ${monitors[$mon]}"
+  done
+}
+
+find_primary() {
+  for output; do
+    if [[ "${monitors[${output^^}]}" == "connected" ]]; then
+      echo "${output^^}"
+      return
+    fi
+  done
+}
+
+build_args() {
+  local primary="$1"
+  local args=""
+  for output in "${!monitors[@]}"; do
+    if [[ "${monitors[$output]}" == "connected" ]]; then
+      args+=" --output $output ${settings[$output]}"
+      [[ "$output" == "$primary" ]] && args+=" --primary"
+    else
+      args+=" --output $output --off"
+    fi
+  done
+  echo "$args"
+}
+
+setup_env() {
+  out=$(ps -C xinit -f --no-header)
+  read _ display _ xauth <<< "${out#*--}"
+  export DISPLAY=$display
+  export XAUTHORITY=$xauth
+}
+
+dump_config() { cat <<EOS
+# Configuration file for $0
+
+# Output to set as primary, in order of priority
+primary ${!monitors[@]}
+
+# Uncomment to log the command and output from xrandr
+# logfile /tmp/${0##*/}
+EOS
+for output in "${!monitors[@]}"; do
+  echo
+  echo "# Options to xrandr --output, i.e."
+  echo "# <output> --mode 1920x1080 --left-of <output>"
+  echo $output
+done
+}
+
+bail() {
+  printf "%s\n" "$@" >&2
+  exit 1
+}
+
+main "$@"
