@@ -7,7 +7,8 @@ bail() {
 
 fetch() {
   mkdir -p "$PWD/sysroot/${1%/*}" || bail "could not create dir for $1"
-  cp --recursive --update "$1" "$PWD/sysroot/$1" || bail "copying $1 failed"
+  cp --recursive --update --dereference \
+    "$1" "$PWD/sysroot/$1" || bail "copying $1 failed"
 }
 
 kernel_version() {

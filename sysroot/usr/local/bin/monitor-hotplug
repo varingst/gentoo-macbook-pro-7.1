@@ -97,6 +97,7 @@ read_config() {
     case "$output" in
       PRIMARY) priority=( $commands );;
       LOGFILE) logfile="$commands";;
+      LID)     lid="$commands";;
       *)       settings["${output}"]="$commands";;
     esac
   done < "$1"
@@ -131,7 +132,9 @@ build_args() {
   local primary="$1"
   local args=""
   for output in "${!monitors[@]}"; do
-    if [[ "${monitors[$output]}" == "connected" ]]; then
+    if [[ "$output" == "$lid" ]] && turn_off_lid "$output"; then
+      args+=" --output $output --off"
+    elif [[ "${monitors[$output]}" == "connected" ]]; then
       args+=" --output $output ${settings[$output]}"
       [[ "$output" == "$primary" ]] && args+=" --primary"
     else
@@ -139,6 +142,19 @@ build_args() {
     fi
   done
   echo "$args"
+}
+
+turn_off_lid() {
+  connected=0
+  for state in "${monitors[@]}"; do
+    [[ "$state" == "connected" ]] && (( connected++ ))
+  done
+  (( connected > 1 )) && return 1
+  read _ state < /proc/acpi/button/lid/LID0/state
+  if [[ "$state" == closed ]]; then
+    return 0
+  fi
+  return 1
 }
 
 setup_env() {

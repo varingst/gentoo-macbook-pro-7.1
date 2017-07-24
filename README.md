@@ -15,7 +15,9 @@ The `fix-eviocgabs-error` script fixes [this issue](https://github.com/systemd/s
 `/mnt/efi/EFI/refind/refind.conf`
 
 ## make.conf
-`/etc/portage/make.conf.macbook`
+`/etc/portage/make.conf`
+`/etc/portage/make.conf.main`
+`/etc/portage/make.conf.te`
 
 ## X trackpad settings
 `/etc/X11/xorg.conf.d/50-synaptics.conf`

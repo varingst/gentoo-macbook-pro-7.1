@@ -1,0 +1,53 @@
+
+PORTDIR="/usr/portage"
+PORTAGE_TMPDIR="/tmp"
+
+source /etc/portage/make.conf.$HOSTNAME
+
+CFLAGS="$native -O2 -pipe"
+CXXFLAGS="$CFLAGS"
+
+DISTDIR="$portstore/distfiles"
+PKGDIR="$portstore/packages"
+
+
+# CPU_FLAGS not needed anymore, but set for backward comp
+USE="$CPU_FLAGS_X86 $USE"
+
+USE="$USE flac ffmpeg djvu pdf jpeg png"
+USE="$USE fontconfig xft"
+USE="$USE dbus usb consolekit udev lm_sensors libnotify"
+USE="$USE X gtk xinerama qt5 gtkstyle -gnome -kde -xfce"
+USE="$USE bash-completion symlink vim-syntax readline unicode"
+USE="$USE bluetooth pulseaudio ios ibus"
+
+INPUT_DEVICES="evdev $INPUT_DEVICES"
+
+GENTOO_MIRRORS="ftp://ftp.df.lth.se/pub/gentoo/ ftp://mirror.mdfnet.se/gentoo"
+
+
+# fetch in packground while compiling
+# tail -f /var/log/emerge-fetch for progress
+FEATURES="$FEATURES parallel-fetch"
+# greater parallelization when installing
+FEATURES="$FEATURES parallel-install"
+
+EMERGE_DEFAULT_OPTS="$EMERGE_DEFAULT_OPTS --ask"
+EMERGE_DEFAULT_OPTS="$EMERGE_DEFAULT_OPTS --autounmask-write=y"
+EMERGE_DEFAULT_OPTS="$EMERGE_DEFAULT_OPTS --color=y"
+EMERGE_DEFAULT_OPTS="$EMERGE_DEFAULT_OPTS --read-news=y"
+EMERGE_DEFAULT_OPTS="$EMERGE_DEFAULT_OPTS --tree"
+EMERGE_DEFAULT_OPTS="$EMERGE_DEFAULT_OPTS --verbose"
+EMERGE_DEFAULT_OPTS="$EMERGE_DEFAULT_OPTS --verbose-conflicts"
+EMERGE_DEFAULT_OPTS="$EMERGE_DEFAULT_OPTS --quiet-build"
+EMERGE_DEFAULT_OPTS="$EMERGE_DEFAULT_OPTS --quiet-fail"
+
+p="/etc/portage"
+cpr="$p/package.accept_keywords"
+cpr="$cpr $p/package.licence"
+cpr="$cpr $p/package.use"
+CONFIG_PROTECT_MASK="$CONFIG_PROTECT_MASK $cpr"
+
+L10N="no nb nn ja en en-US"
+RUBY_TARGETS="ruby21 ruby22"
+PYTHON_TARGETS="python2_7 python3_4 $PYTHON_TARGETS"

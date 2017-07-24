@@ -5,8 +5,6 @@
 native="-march=core2 -mmmx -msse -msse2 -msse3 -mssse3 -mcx16 -msahf -msse4.1"
 native="$native -mfxsr --param l1-cache-size=32 --param l1-cache-line-size=64"
 native="$native --param l2-cache-size=3072 -mtune=core2 -fstack-protector-strong"
-CFLAGS="$native -O2 -pipe"
-CXXFLAGS="${CFLAGS}"
 
 CHOST="x86_64-pc-linux-gnu"
 
@@ -14,7 +12,9 @@ MAKEOPTS="-j3 -l2"
 
 CPU_FLAGS_X86="mmx mmxext sse sse2 sse3 sse4_1 ssse3"
 
-INPUT_DEVICES="evdev synaptics mtrack tslib"
+INPUT_DEVICES="synaptics mtrack tslib"
 VIDEO_CARDS="nouveau"
 
-USE="bluetooth pulseaudio"
+portstore="$PORTDIR"
+
+EMERGE_DEFAULT_OPTS="--jobs=2 --load-average=2"
